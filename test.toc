@@ -1,0 +1,78 @@
+
+(add-ns (module "state-maybe.toc"))
+
+(defn double [x]
+  (* 2 x))
+
+(defn f [x]
+  (state-maybe (inc x)))
+
+(defn g [x]
+  (state-maybe (double x)))
+
+(main [_]
+      ;; check the functor and applicative laws for state
+      (println)
+      (let [env :environment]
+        (println :functor-1
+                 ((state-maybe 5) env)
+                 (= ((map (state-maybe 5) identity) env)
+                    ((state-maybe 5) env)))
+        (println :functor-2
+                 ((map (state-maybe 5) inc) env)
+                 (= ((map (map (state-maybe 2) inc) double) env)
+                    ((map (state-maybe 2) (comp inc double)) env)))
+        (println :apply-1
+                 ((map (state-maybe 5) inc) env)
+                 (= ((map (state-maybe 5) inc) env)
+                    ((apply-to inc (state-maybe 5)) env)))
+        (println :apply-2
+                 ((state-maybe 5) env)
+                 (= ((state-maybe 5) env)
+                    ((apply-to identity (state-maybe 5)) env)))
+        (let [v1 (state-maybe "first ")
+              v2 (state-maybe "second ")
+              v3 (state-maybe "third")]
+          (println :apply-3
+                   ((apply-to comp v1 v2 v3) env)
+                   (= (maybe (list (comp "first " "second " "third") env))
+                      ((apply-to comp (apply-to comp v1 v2) v3) env)
+                      ((apply-to comp v1 (apply-to comp v2 v3)) env)
+                      ((apply-to comp v1 v2 v3) env))))
+
+        (println :state-maybe-flat-map
+                 ((state-maybe 8) env)
+                 (= ((flat-map (state-maybe 8) state-maybe) env)
+                    ((state-maybe 8) env)))
+
+        (println :flat-map-1
+                 ((f 4) env)
+                 (= ((flat-map (state-maybe 4) f) env)
+                                ((f 4) env)))
+        (println :flat-map-2
+                 ((state-maybe 4) env)
+                 (= ((flat-map (state-maybe 4) state-maybe) env)
+                                ((state-maybe 4) env)))
+        (println :flat-map-3
+                 ((state-maybe 10) env)
+                 (= ((state-maybe 10) env)
+                    ((flat-map (flat-map (state-maybe 4) f) g) env)
+                    ((flat-map (state-maybe 4) (fn [x] (flat-map (f x) g))) env)))
+
+        (println :comp-1 ((comp (state-maybe :yep)
+                                (state-maybe :nope))
+                          env))
+
+        (println :comp-2 ((comp (zero state-maybe)
+                                (state-maybe :yep))
+                          env))
+
+        (println :comp-3 ((comp (get-val :x)
+                                (state-maybe :yep))
+                          {:x 8}))
+
+        (println :comp-3 ((apply-to list
+                                    (set-val :x 99)
+                                    (state-maybe :yep))
+                          {:x 8}))
+        ))

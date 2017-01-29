@@ -107,8 +107,9 @@
 
 (defn update-in-val [path f]
   (new-sm (fn [s]
-            (for [old-v (get-in s path)]
-              [old-v (update-in s path f)]))))
+            (for [old-v (get-in s path)
+                  new-s (update-in s path f)]
+              [old-v new-s]))))
 
 (defn recur-fn [f as s]
   (or (flat-map (f s)

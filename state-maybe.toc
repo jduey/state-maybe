@@ -112,10 +112,10 @@
               [old-v new-s]))))
 
 (defn recur-fn [f as s]
-  (or (flat-map (f s)
-                (fn [[v ss]]
-                  (recur-fn f (cons v as) ss)))
-      (maybe [as s])))
+  (let [x (f s)]
+    (or (and x (let [[v ss] (extract x)]
+                 (recur-fn f (cons v as) ss)))
+        (maybe [as s]))))
 
 (defn recur [mv]
   (new-sm (fn [s]
